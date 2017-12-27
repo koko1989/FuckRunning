@@ -26,8 +26,11 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.acgmiao.dev.fuckrunning.R;
+import com.google.android.gms.maps.model.LatLng;
 
 import java.util.List;
+
+import static com.acgmiao.dev.fuckrunning.util.CoordTrans.GPS2GCJ;
 
 public class MapsActivity extends AppCompatActivity implements
         OnMapReadyCallback,
@@ -126,6 +129,7 @@ public class MapsActivity extends AppCompatActivity implements
         //丢失默认事件，待修复
         //mMap.setOnMyLocationButtonClickListener(this);
 //        mMap.setOnMyLocationClickListener(this);
+        mMap.setMyLocationEnabled(true);
     }
 
     private void registerBroadcastReceiver(){
@@ -155,6 +159,7 @@ public class MapsActivity extends AppCompatActivity implements
                         provider,LOCATION_REFRESH_TIME_INTERVAL,LOCATION_MIN_DESTANCE,this);
             }
             mIsAddListener = true;
+            mMap.setLocationSource(new MyLocationSource());
         }
     }
 
@@ -164,11 +169,18 @@ public class MapsActivity extends AppCompatActivity implements
             Log.e("test","stopGetLocation");
             mLocationManager.removeUpdates(this);
             mIsAddListener = false;
+            //mMap.setLocationSource(this);
         }
     }
 
     @Override
     public void onLocationChanged(Location location) {
+        double lot = location.getLongitude();
+        double lat = location.getLatitude();
+        LatLng mglocation = GPS2GCJ(new LatLng(lat, lot));
+        location.setLatitude(mglocation.latitude);
+        location.setLongitude(mglocation.longitude);
+        myLocationListener.onLocationChanged(location);
         Log.e("test","onLocationChanged:"+location.toString()+",Provider:"+location.getProvider());
     }
 
@@ -284,21 +296,10 @@ public class MapsActivity extends AppCompatActivity implements
 
     private LocationSource.OnLocationChangedListener myLocationListener = null;
 
-
-
     private class MyLocationSource implements LocationSource {
         @Override
         public void activate(OnLocationChangedListener listener) {
-//            myLocationListener = listener;
-//            MyLocation mylocation = new MyLocation();
-//            mylocation.getLocation();
-//            if (mylocation.location == null) {
-//                //什么乱七八糟的
-//                mPermissionDenied = true;
-//                updateLocationUI();
-//            } else {
-//                myLocationListener.onLocationChanged(mylocation.location);
-//            }
+            myLocationListener = listener;
         }
 
         @Override
