@@ -180,14 +180,19 @@ public class MapsActivity extends AppCompatActivity implements
         }
     }
 
+    private Location mLastKnownLocation;
+
     @Override
     public void onLocationChanged(Location location) {
         double lot = location.getLongitude();
         double lat = location.getLatitude();
-        LatLng mglocation = GPS2GCJ(new LatLng(lat, lot));
-        location.setLatitude(mglocation.latitude);
-        location.setLongitude(mglocation.longitude);
-        myLocationListener.onLocationChanged(location);
+        LatLng mgLatLng = GPS2GCJ(new LatLng(lat, lot));
+        location.setLatitude(mgLatLng.latitude);
+        location.setLongitude(mgLatLng.longitude);
+        if(mLastKnownLocation == null || location.getAccuracy() <= mLastKnownLocation.getAccuracy()){
+            mLastKnownLocation = location;
+        }
+        myLocationListener.onLocationChanged(mLastKnownLocation);
         Log.e("test","onLocationChanged:"+location.toString()+",Provider:"+location.getProvider());
     }
 
