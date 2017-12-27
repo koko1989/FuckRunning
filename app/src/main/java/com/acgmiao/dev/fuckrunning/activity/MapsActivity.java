@@ -191,8 +191,8 @@ public class MapsActivity extends AppCompatActivity implements
         location.setLongitude(mgLatLng.longitude);
         if(mLastKnownLocation == null || location.getAccuracy() <= mLastKnownLocation.getAccuracy()){
             mLastKnownLocation = location;
+            myLocationListener.onLocationChanged(mLastKnownLocation);
         }
-        myLocationListener.onLocationChanged(mLastKnownLocation);
         Log.e("test","onLocationChanged:"+location.toString()+",Provider:"+location.getProvider());
     }
 
