@@ -1,13 +1,5 @@
 package com.acgmiao.dev.fuckrunning.activity;
 
-import com.acgmiao.dev.fuckrunning.util.MyLocation;
-import com.acgmiao.dev.fuckrunning.util.PermissionUtils;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.LocationSource;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
@@ -22,14 +14,18 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.acgmiao.dev.fuckrunning.R;
+import com.acgmiao.dev.fuckrunning.util.PermissionUtils;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.LocationSource;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 
 import java.util.List;
 
@@ -74,12 +70,12 @@ public class MapsActivity extends AppCompatActivity implements
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if(intent.getAction().equalsIgnoreCase(LocationManager.PROVIDERS_CHANGED_ACTION)){
-                    if(mIsPermissionGranted && mIsResume){
+                if (intent.getAction().equalsIgnoreCase(LocationManager.PROVIDERS_CHANGED_ACTION)) {
+                    if (mIsPermissionGranted && mIsResume) {
                         boolean isGPSOn = isGPSOn();
-                        if(isGPSOn){
+                        if (isGPSOn) {
                             startGetLocation();
-                        }else{
+                        } else {
                             stopGetLocation();
                         }
                     }
@@ -98,7 +94,7 @@ public class MapsActivity extends AppCompatActivity implements
         super.onResume();
         mIsResume = true;
         registerBroadcastReceiver();
-        if(mIsPermissionGranted){
+        if (mIsPermissionGranted) {
             startGetLocation();
         } else {
             if (checkLocationPermission()) {
@@ -113,7 +109,7 @@ public class MapsActivity extends AppCompatActivity implements
         super.onPause();
         mIsResume = true;
         unregisterBroadcastReceiver();
-        if(mIsPermissionGranted){
+        if (mIsPermissionGranted) {
             stopGetLocation();
         }
     }
@@ -122,11 +118,11 @@ public class MapsActivity extends AppCompatActivity implements
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         boolean isGotLocationPermission = checkLocationPermission();
-        if(isGotLocationPermission){
+        if (isGotLocationPermission) {
             // goto next method
             mIsPermissionGranted = true;
             startGetLocation();
-        }else{
+        } else {
             // need to get location permission
             requestLocationPermission();
         }
@@ -139,41 +135,41 @@ public class MapsActivity extends AppCompatActivity implements
 //        mMap.setOnMyLocationClickListener(this);
     }
 
-    private void registerBroadcastReceiver(){
+    private void registerBroadcastReceiver() {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationManager.PROVIDERS_CHANGED_ACTION);
-        registerReceiver(broadcastReceiver,intentFilter);
+        registerReceiver(broadcastReceiver, intentFilter);
     }
 
-    private void unregisterBroadcastReceiver(){
+    private void unregisterBroadcastReceiver() {
         unregisterReceiver(broadcastReceiver);
     }
 
-    private void initLocationManager(){
-        if(mLocationManager == null){
+    private void initLocationManager() {
+        if (mLocationManager == null) {
             mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         }
     }
 
     @SuppressLint("MissingPermission")
-    private void startGetLocation(){
+    private void startGetLocation() {
         initLocationManager();
-        if(!mIsAddListener){
+        if (!mIsAddListener) {
             List<String> providers = mLocationManager.getProviders(true);
-            for(int i = 0; i < providers.size() ; i ++ ) {
+            for (int i = 0; i < providers.size(); i++) {
                 String provider = providers.get(i);
-                Log.e("test","startGetLocation:"+provider);
+                Log.e("test", "startGetLocation:" + provider);
                 mLocationManager.requestLocationUpdates(
-                        provider,LOCATION_REFRESH_TIME_INTERVAL,LOCATION_MIN_DESTANCE,this);
+                        provider, LOCATION_REFRESH_TIME_INTERVAL, LOCATION_MIN_DESTANCE, this);
             }
             mIsAddListener = true;
         }
     }
 
-    private void stopGetLocation(){
+    private void stopGetLocation() {
         initLocationManager();
-        if(mIsAddListener){
-            Log.e("test","stopGetLocation");
+        if (mIsAddListener) {
+            Log.e("test", "stopGetLocation");
             mLocationManager.removeUpdates(this);
             mIsAddListener = false;
             //mMap.setLocationSource(this);
@@ -194,35 +190,35 @@ public class MapsActivity extends AppCompatActivity implements
         if (mLastKnownLocation == null) {//第一次定到位
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mgLatLng, 15));
         }
-        if(mLastKnownLocation == null || location.getAccuracy() <= mLastKnownLocation.getAccuracy()){
+        if (mLastKnownLocation == null || location.getAccuracy() <= mLastKnownLocation.getAccuracy()) {
             mLastKnownLocation = location;
-            if(!mMap.isMyLocationEnabled()){
+            if (!mMap.isMyLocationEnabled()) {
                 mMap.setMyLocationEnabled(true);
             }
             myLocationListener.onLocationChanged(mLastKnownLocation);
         }
-        Log.e("test","onLocationChanged:"+location.toString()+",Provider:"+location.getProvider());
+        Log.e("test", "onLocationChanged:" + location.toString() + ",Provider:" + location.getProvider());
     }
 
     @Override
     public void onStatusChanged(String s, int i, Bundle bundle) {
-        Log.e("test","onStatusChanged:"+s+","+i);
+        Log.e("test", "onStatusChanged:" + s + "," + i);
 
     }
 
     @Override
     public void onProviderEnabled(String s) {
-        Log.e("test","onProviderEnabled:"+s);
+        Log.e("test", "onProviderEnabled:" + s);
 
     }
 
     @Override
     public void onProviderDisabled(String s) {
-        Log.e("test","onProviderDisabled:"+s);
+        Log.e("test", "onProviderDisabled:" + s);
 
     }
 
-    private boolean isGPSOn(){
+    private boolean isGPSOn() {
         initLocationManager();
         boolean gpsOn = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         return gpsOn;
@@ -230,13 +226,14 @@ public class MapsActivity extends AppCompatActivity implements
 
     /**
      * check Location Permission
+     *
      * @return
      */
-    private boolean checkLocationPermission(){
+    private boolean checkLocationPermission() {
         boolean locationPermission = false;
         int permissionStatus = ContextCompat.
                 checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION);
-        if(permissionStatus == PackageManager.PERMISSION_GRANTED){
+        if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
             locationPermission = true;
         }
         return locationPermission;
@@ -297,7 +294,7 @@ public class MapsActivity extends AppCompatActivity implements
             startGetLocation();
         } else {
             mIsPermissionGranted = false;
-            Log.e("test","not get location permission");
+            Log.e("test", "not get location permission");
         }
     }
 
