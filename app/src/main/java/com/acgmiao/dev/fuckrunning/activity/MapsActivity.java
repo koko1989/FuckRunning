@@ -135,8 +135,6 @@ public class MapsActivity extends AppCompatActivity implements
         //丢失默认事件，待修复
         //mMap.setOnMyLocationButtonClickListener(this);
 //        mMap.setOnMyLocationClickListener(this);
-        mMap.setMyLocationEnabled(true);
-        mMap.setLocationSource(new MyLocationSource());
     }
 
     private void registerBroadcastReceiver(){
@@ -182,6 +180,7 @@ public class MapsActivity extends AppCompatActivity implements
 
     private Location mLastKnownLocation;
 
+    @SuppressLint("MissingPermission")
     @Override
     public void onLocationChanged(Location location) {
         double lot = location.getLongitude();
@@ -191,7 +190,11 @@ public class MapsActivity extends AppCompatActivity implements
         location.setLongitude(mgLatLng.longitude);
         if(mLastKnownLocation == null || location.getAccuracy() <= mLastKnownLocation.getAccuracy()){
             mLastKnownLocation = location;
-            myLocationListener.onLocationChanged(mLastKnownLocation);
+            if(!mMap.isMyLocationEnabled()){
+                mMap.setMyLocationEnabled(true);
+                mMap.setLocationSource(new MyLocationSource());
+                myLocationListener.onLocationChanged(mLastKnownLocation);
+            }
         }
         Log.e("test","onLocationChanged:"+location.toString()+",Provider:"+location.getProvider());
     }
