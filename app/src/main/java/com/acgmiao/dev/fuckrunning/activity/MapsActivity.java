@@ -2,6 +2,7 @@ package com.acgmiao.dev.fuckrunning.activity;
 
 import com.acgmiao.dev.fuckrunning.util.MyLocation;
 import com.acgmiao.dev.fuckrunning.util.PermissionUtils;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -28,6 +29,7 @@ import android.widget.Toast;
 
 import com.acgmiao.dev.fuckrunning.R;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 
 import java.util.List;
 
@@ -188,13 +190,16 @@ public class MapsActivity extends AppCompatActivity implements
         LatLng mgLatLng = GPS2GCJ(new LatLng(lat, lot));
         location.setLatitude(mgLatLng.latitude);
         location.setLongitude(mgLatLng.longitude);
+        mMap.setLocationSource(new MyLocationSource());
+        if (mLastKnownLocation == null) {//第一次定到位
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mgLatLng, 15));
+        }
         if(mLastKnownLocation == null || location.getAccuracy() <= mLastKnownLocation.getAccuracy()){
             mLastKnownLocation = location;
             if(!mMap.isMyLocationEnabled()){
                 mMap.setMyLocationEnabled(true);
-                mMap.setLocationSource(new MyLocationSource());
-                myLocationListener.onLocationChanged(mLastKnownLocation);
             }
+            myLocationListener.onLocationChanged(mLastKnownLocation);
         }
         Log.e("test","onLocationChanged:"+location.toString()+",Provider:"+location.getProvider());
     }
