@@ -33,6 +33,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.List;
 
+import static com.acgmiao.dev.fuckrunning.util.CoordTrans.GPS2GCJ;
+
 public class MapsActivity extends AppCompatActivity implements
         OnMapReadyCallback,
         GoogleMap.OnMyLocationButtonClickListener,
@@ -234,6 +236,9 @@ public class MapsActivity extends AppCompatActivity implements
     @Override
     public void onLocationChanged(Location location) {
         Log.e("test", "onLocationChanged:" + location.toString() + ",Provider:" + location.getProvider());
+        LatLng mglocation = GPS2GCJ(new LatLng(location.getLatitude(), location.getLongitude()));
+        location.setLatitude(mglocation.latitude);
+        location.setLongitude(mglocation.longitude);
         mLastLocation = location;
         updateMyLocationMarker();
     }
