@@ -46,7 +46,12 @@ public class MapsActivity extends AppCompatActivity implements
     /**
      * min Meter
      */
-    private static final float LOCATION_MIN_DESTANCE = 1.0f;
+    private static final float LOCATION_MIN_DISTANCE = 1.0f;
+
+    /**
+     *
+     */
+    private static final long BAD_ACCURACY_UPDATE_TIME = 2 * 60 * 1000;
 
     private GoogleMap mMap;
 
@@ -160,7 +165,7 @@ public class MapsActivity extends AppCompatActivity implements
                 String provider = providers.get(i);
                 Log.e("test", "startGetLocation:" + provider);
                 mLocationManager.requestLocationUpdates(
-                        provider, LOCATION_REFRESH_TIME_INTERVAL, LOCATION_MIN_DESTANCE, this);
+                        provider, LOCATION_REFRESH_TIME_INTERVAL, LOCATION_MIN_DISTANCE, this);
             }
             mIsAddListener = true;
         }
@@ -178,9 +183,13 @@ public class MapsActivity extends AppCompatActivity implements
 
     private Location mLastKnownLocation;
 
+    private long mLastUpdateLocationTime;
+
     @SuppressLint("MissingPermission")
     @Override
     public void onLocationChanged(Location location) {
+        long nowTime = System.currentTimeMillis();
+        boolean isUpdateMap = false;
         double lot = location.getLongitude();
         double lat = location.getLatitude();
         LatLng mgLatLng = GPS2GCJ(new LatLng(lat, lot));
@@ -192,10 +201,23 @@ public class MapsActivity extends AppCompatActivity implements
         }
         if (mLastKnownLocation == null || location.getAccuracy() <= mLastKnownLocation.getAccuracy()) {
             mLastKnownLocation = location;
+            mLastUpdateLocationTime = nowTime;
             if (!mMap.isMyLocationEnabled()) {
                 mMap.setMyLocationEnabled(true);
             }
+            isUpdateMap = true;
+        }
+        // force update location
+        if(mLastUpdateLocationTime > 0 && nowTime - mLastUpdateLocationTime >= BAD_ACCURACY_UPDATE_TIME) {
+            if(location.getAccuracy() >= mLastKnownLocation.getAccuracy()) {
+                mLastKnownLocation = location;
+                mLastUpdateLocationTime = nowTime;
+                isUpdateMap = true;
+            }
+        }
+        if(isUpdateMap){
             myLocationListener.onLocationChanged(mLastKnownLocation);
+            Log.e("test","onLocationChanged Performed");
         }
         Log.e("test", "onLocationChanged:" + location.toString() + ",Provider:" + location.getProvider());
     }
@@ -203,19 +225,16 @@ public class MapsActivity extends AppCompatActivity implements
     @Override
     public void onStatusChanged(String s, int i, Bundle bundle) {
         Log.e("test", "onStatusChanged:" + s + "," + i);
-
     }
 
     @Override
     public void onProviderEnabled(String s) {
         Log.e("test", "onProviderEnabled:" + s);
-
     }
 
     @Override
     public void onProviderDisabled(String s) {
         Log.e("test", "onProviderDisabled:" + s);
-
     }
 
     private boolean isGPSOn() {
