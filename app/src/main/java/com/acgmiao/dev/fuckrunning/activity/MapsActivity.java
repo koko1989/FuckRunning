@@ -8,6 +8,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -94,6 +95,11 @@ public class MapsActivity extends AppCompatActivity implements
         registerBroadcastReceiver();
         if(mIsPermissionGranted){
             startGetLocation();
+        }else {
+            if(checkLocationPermission()){
+                mIsPermissionGranted = true;
+                startGetLocation();
+            }
         }
     }
 
@@ -144,6 +150,7 @@ public class MapsActivity extends AppCompatActivity implements
         }
     }
 
+    @SuppressLint("MissingPermission")
     private void startGetLocation(){
         initLocationManager();
         if(!mIsAddListener){
