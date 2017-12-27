@@ -1,7 +1,8 @@
 package com.acgmiao.dev.fuckrunning.activity;
 
-import com.acgmiao.dev.fuckrunning.util.MyLocation;
 import com.acgmiao.dev.fuckrunning.util.PermissionUtils;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -21,12 +22,14 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.acgmiao.dev.fuckrunning.R;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.List;
 
@@ -35,46 +38,72 @@ public class MapsActivity extends AppCompatActivity implements
         GoogleMap.OnMyLocationButtonClickListener,
         GoogleMap.OnMyLocationClickListener,
         ActivityCompat.OnRequestPermissionsResultCallback,
-        LocationListener {
+        LocationListener,
+        GoogleMap.CancelableCallback {
 
     /**
-     * refresh Once per Second
+     * Refresh Once Per Second
      */
     private static final long LOCATION_REFRESH_TIME_INTERVAL = 1000;
 
     /**
-     * min Meter
+     * Min Meter
      */
-    private static final float LOCATION_MIN_DESTANCE = 1.0f;
+    private static final float LOCATION_MIN_DISTANCE = 1.0f;
 
+    /**
+     * Google Map Instance
+     */
     private GoogleMap mMap;
 
+    /**
+     * LocationManager Instance
+     */
     private LocationManager mLocationManager;
 
+    /**
+     * Location Listener Add Flag
+     */
     private boolean mIsAddListener;
 
     /**
-     * is Permission Granted
+     * Is Permission Granted
      */
     private boolean mIsPermissionGranted;
 
-    private BroadcastReceiver broadcastReceiver;
+    /**
+     * Location Broadcast Receiver
+     */
+    private BroadcastReceiver mBroadcastReceiver;
 
-    private Location location;
+    /**
+     * Is Resume Flag
+     */
+    private boolean mIsResume;
+
+    /**
+     * Last of My Location
+     */
+    private Location mLastLocation;
+
+    /**
+     *
+     */
+    private Marker myLocationMarker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        broadcastReceiver = new BroadcastReceiver() {
+        mBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if(intent.getAction().equalsIgnoreCase(LocationManager.PROVIDERS_CHANGED_ACTION)){
-                    if(mIsPermissionGranted && mIsResume){
+                if (intent.getAction().equalsIgnoreCase(LocationManager.PROVIDERS_CHANGED_ACTION)) {
+                    if (mIsPermissionGranted && mIsResume) {
                         boolean isGPSOn = isGPSOn();
-                        if(isGPSOn){
+                        if (isGPSOn) {
                             startGetLocation();
-                        }else{
+                        } else {
                             stopGetLocation();
                         }
                     }
@@ -86,17 +115,15 @@ public class MapsActivity extends AppCompatActivity implements
         mapFragment.getMapAsync(this);
     }
 
-    private boolean mIsResume;
-
     @Override
     protected void onResume() {
         super.onResume();
         mIsResume = true;
         registerBroadcastReceiver();
-        if(mIsPermissionGranted){
+        if (mIsPermissionGranted) {
             startGetLocation();
-        }else {
-            if(checkLocationPermission()){
+        } else {
+            if (checkLocationPermission()) {
                 mIsPermissionGranted = true;
                 startGetLocation();
             }
@@ -108,7 +135,7 @@ public class MapsActivity extends AppCompatActivity implements
         super.onPause();
         mIsResume = true;
         unregisterBroadcastReceiver();
-        if(mIsPermissionGranted){
+        if (mIsPermissionGranted) {
             stopGetLocation();
         }
     }
@@ -117,11 +144,11 @@ public class MapsActivity extends AppCompatActivity implements
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         boolean isGotLocationPermission = checkLocationPermission();
-        if(isGotLocationPermission){
+        if (isGotLocationPermission) {
             // goto next method
             mIsPermissionGranted = true;
             startGetLocation();
-        }else{
+        } else {
             // need to get location permission
             requestLocationPermission();
         }
@@ -134,70 +161,99 @@ public class MapsActivity extends AppCompatActivity implements
 //        mMap.setOnMyLocationClickListener(this);
     }
 
-    private void registerBroadcastReceiver(){
+    @Override
+    public void onFinish() {
+
+    }
+
+    @Override
+    public void onCancel() {
+
+    }
+
+    private void registerBroadcastReceiver() {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationManager.PROVIDERS_CHANGED_ACTION);
-        registerReceiver(broadcastReceiver,intentFilter);
+        registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
-    private void unregisterBroadcastReceiver(){
-        unregisterReceiver(broadcastReceiver);
+    private void unregisterBroadcastReceiver() {
+        unregisterReceiver(mBroadcastReceiver);
     }
 
-    private void initLocationManager(){
-        if(mLocationManager == null){
+    private void initLocationManager() {
+        if (mLocationManager == null) {
             mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         }
     }
 
     @SuppressLint("MissingPermission")
-    private void startGetLocation(){
+    private void startGetLocation() {
         initLocationManager();
-        if(!mIsAddListener){
+        if (!mIsAddListener) {
             List<String> providers = mLocationManager.getProviders(true);
-            for(int i = 0 ; i < providers.size() ; i ++ ) {
+            for (int i = 0; i < providers.size(); i++) {
                 String provider = providers.get(i);
-                Log.e("test","startGetLocation:"+provider);
+                Log.e("test", "startGetLocation:" + provider);
                 mLocationManager.requestLocationUpdates(
-                        provider,LOCATION_REFRESH_TIME_INTERVAL,LOCATION_MIN_DESTANCE,this);
+                        provider, LOCATION_REFRESH_TIME_INTERVAL, LOCATION_MIN_DISTANCE, this);
             }
             mIsAddListener = true;
         }
     }
 
-    private void stopGetLocation(){
+    private void stopGetLocation() {
         initLocationManager();
-        if(mIsAddListener){
-            Log.e("test","stopGetLocation");
+        if (mIsAddListener) {
+            Log.e("test", "stopGetLocation");
             mLocationManager.removeUpdates(this);
             mIsAddListener = false;
         }
     }
 
+    /**
+     * Update My Location Marker
+     */
+    private void updateMyLocationMarker() {
+        if (mLastLocation != null) {
+            LatLng latLng = new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude());
+            if(myLocationMarker == null) {
+                // init marker
+                MarkerOptions markerOptions = new MarkerOptions();
+                markerOptions.position(latLng);
+                myLocationMarker = mMap.addMarker(markerOptions);
+                //move map
+                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLng(latLng);
+                mMap.animateCamera(cameraUpdate,this);
+            }
+            // my position
+            myLocationMarker.setPosition(latLng);
+        }
+    }
+
     @Override
     public void onLocationChanged(Location location) {
-        Log.e("test","onLocationChanged:"+location.toString()+",Provider:"+location.getProvider());
+        Log.e("test", "onLocationChanged:" + location.toString() + ",Provider:" + location.getProvider());
+        mLastLocation = location;
+        updateMyLocationMarker();
     }
 
     @Override
     public void onStatusChanged(String s, int i, Bundle bundle) {
-        Log.e("test","onStatusChanged:"+s+","+i);
-
+        Log.e("test", "onStatusChanged:" + s + "," + i);
     }
 
     @Override
     public void onProviderEnabled(String s) {
-        Log.e("test","onProviderEnabled:"+s);
-
+        Log.e("test", "onProviderEnabled:" + s);
     }
 
     @Override
     public void onProviderDisabled(String s) {
-        Log.e("test","onProviderDisabled:"+s);
-
+        Log.e("test", "onProviderDisabled:" + s);
     }
 
-    private boolean isGPSOn(){
+    private boolean isGPSOn() {
         initLocationManager();
         boolean gpsOn = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         return gpsOn;
@@ -205,13 +261,14 @@ public class MapsActivity extends AppCompatActivity implements
 
     /**
      * check Location Permission
+     *
      * @return
      */
-    private boolean checkLocationPermission(){
+    private boolean checkLocationPermission() {
         boolean locationPermission = false;
         int permissionStatus = ContextCompat.
                 checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION);
-        if(permissionStatus == PackageManager.PERMISSION_GRANTED){
+        if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
             locationPermission = true;
         }
         return locationPermission;
@@ -272,7 +329,7 @@ public class MapsActivity extends AppCompatActivity implements
             startGetLocation();
         } else {
             mIsPermissionGranted = false;
-            Log.e("test","not get location permission");
+            Log.e("test", "not get location permission");
         }
     }
 
@@ -290,7 +347,6 @@ public class MapsActivity extends AppCompatActivity implements
     }
 
     private LocationSource.OnLocationChangedListener myLocationListener = null;
-
 
 
     private class MyLocationSource implements LocationSource {
