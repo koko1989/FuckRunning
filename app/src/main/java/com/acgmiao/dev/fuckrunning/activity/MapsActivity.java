@@ -38,19 +38,10 @@ public class MapsActivity extends AppCompatActivity implements
         ActivityCompat.OnRequestPermissionsResultCallback,
         LocationListener {
 
-    /**
-     * refresh Once per Second
-     */
     private static final long LOCATION_REFRESH_TIME_INTERVAL = 1000;
 
-    /**
-     * min Meter
-     */
     private static final float LOCATION_MIN_DISTANCE = 1.0f;
 
-    /**
-     *
-     */
     private static final long BAD_ACCURACY_UPDATE_TIME = 2 * 60 * 1000;
 
     private GoogleMap mMap;
@@ -59,14 +50,17 @@ public class MapsActivity extends AppCompatActivity implements
 
     private boolean mIsAddListener;
 
-    /**
-     * is Permission Granted
-     */
     private boolean mIsPermissionGranted;
 
     private BroadcastReceiver broadcastReceiver;
 
-    private Location location;
+    private boolean mIsResume;
+
+    private Location mLastKnownLocation;
+
+    private long mLastUpdateLocationTime;
+
+    private LocationSource.OnLocationChangedListener myLocationListener = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,8 +85,6 @@ public class MapsActivity extends AppCompatActivity implements
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
     }
-
-    private boolean mIsResume;
 
     @Override
     protected void onResume() {
@@ -132,12 +124,8 @@ public class MapsActivity extends AppCompatActivity implements
             requestLocationPermission();
         }
 
-
-//        updateLocationUI();
-
-        //丢失默认事件，待修复
-        //mMap.setOnMyLocationButtonClickListener(this);
-//        mMap.setOnMyLocationClickListener(this);
+        mMap.setOnMyLocationButtonClickListener(this);
+        mMap.setOnMyLocationClickListener(this);
     }
 
     private void registerBroadcastReceiver() {
@@ -180,10 +168,6 @@ public class MapsActivity extends AppCompatActivity implements
             //mMap.setLocationSource(this);
         }
     }
-
-    private Location mLastKnownLocation;
-
-    private long mLastUpdateLocationTime;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -239,15 +223,9 @@ public class MapsActivity extends AppCompatActivity implements
 
     private boolean isGPSOn() {
         initLocationManager();
-        boolean gpsOn = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        return gpsOn;
+        return mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
     }
 
-    /**
-     * check Location Permission
-     *
-     * @return
-     */
     private boolean checkLocationPermission() {
         boolean locationPermission = false;
         int permissionStatus = ContextCompat.
@@ -258,40 +236,17 @@ public class MapsActivity extends AppCompatActivity implements
         return locationPermission;
     }
 
-    /**
-     * requestLocationPermission
-     */
-    public void requestLocationPermission() {
+    private void requestLocationPermission() {
         PermissionUtils.requestPermission(this,
                 PermissionUtils.LOCATION_PERMISSION_REQUEST_CODE,
                 android.Manifest.permission.ACCESS_FINE_LOCATION, false);
-    }
-
-
-    private void updateLocationUI() {
-        if (mMap == null) {
-            return;
-        }
-//        try {
-//            if (mPermissionDenied) {
-//                mMap.setMyLocationEnabled(false);
-//                mMap.getUiSettings().setMyLocationButtonEnabled(false);
-//            } else {
-//                mMap.setMyLocationEnabled(true);
-//                mMap.getUiSettings().setMyLocationButtonEnabled(true);
-//                mMap.setLocationSource(new MyLocationSource());
-//            }
-//        } catch (SecurityException e) {
-//            Log.e("Exception: %s", e.getMessage());
-//        }
     }
 
     @Override
     public boolean onMyLocationButtonClick() {
         Toast.makeText(this, "MyLocationApplication button clicked", Toast.LENGTH_SHORT).show();
         // Return false so that we don't consume the event and the default behavior still occurs
-        // (the camera animates to the user's current position).
-        return true;
+        return false;
     }
 
     @Override
@@ -320,17 +275,11 @@ public class MapsActivity extends AppCompatActivity implements
     @Override
     protected void onResumeFragments() {
         super.onResumeFragments();
-//        if (mPermissionDenied) {
-//            showMissingPermissionError();
-//            mPermissionDenied = false;
-//        }
     }
 
-    private void showMissingPermissionError() {
-        PermissionUtils.PermissionDeniedDialog.newInstance(false).show(getSupportFragmentManager(), "dialog");
-    }
-
-    private LocationSource.OnLocationChangedListener myLocationListener = null;
+//    private void showMissingPermissionError() {
+//        PermissionUtils.PermissionDeniedDialog.newInstance(false).show(getSupportFragmentManager(), "dialog");
+//    }
 
     private class MyLocationSource implements LocationSource {
         @Override

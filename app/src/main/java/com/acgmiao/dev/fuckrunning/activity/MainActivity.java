@@ -12,21 +12,18 @@ import com.acgmiao.dev.fuckrunning.R;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button testbutton;
-    private Button mapbutton;
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        testbutton = (Button) findViewById(R.id.testButton);
+        Button testbutton = (Button) findViewById(R.id.testButton);
         testbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Toast.makeText(MainActivity.this, toastMessage(), Toast.LENGTH_SHORT).show();
             }
         });
-        mapbutton = (Button) findViewById(R.id.mapButton);
+        Button mapbutton = (Button) findViewById(R.id.mapButton);
         mapbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -36,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public String toastMessage() {
+    private String toastMessage() {
         return "我未被劫持";
     }
 }

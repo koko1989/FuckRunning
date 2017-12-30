@@ -6,9 +6,9 @@ import static com.acgmiao.dev.fuckrunning.util.Rectangle.IsInsideChina;
 
 public class CoordTrans {
 
-    private static double pi = 3.1415926535897932384626;
-    private static double a = 6378245.0;
-    private static double ee = 0.00669342162296594323;
+    private static final double pi = 3.1415926535897932384626;
+    private static final double a = 6378245.0;
+    private static final double ee = 0.00669342162296594323;
 
     public static LatLng GPS2GCJ(LatLng location) {
         double lat = location.latitude;
@@ -45,9 +45,9 @@ public class CoordTrans {
         dLon = (dLon * 180.0) / (a / sqrtMagic * Math.cos(radLat) * pi);
         double mgLat = lat + dLat;
         double mgLon = lon + dLon;
-        double lontitude = lon * 2 - mgLon;
+        double longitude = lon * 2 - mgLon;
         double latitude = lat * 2 - mgLat;
-        return new LatLng(latitude, lontitude);
+        return new LatLng(latitude, longitude);
     }
 
     private static double transformLat(double x, double y) {
