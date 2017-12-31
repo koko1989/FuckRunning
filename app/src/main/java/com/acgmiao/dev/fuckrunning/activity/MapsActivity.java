@@ -26,6 +26,8 @@ import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.List;
 
@@ -35,6 +37,8 @@ public class MapsActivity extends AppCompatActivity implements
         OnMapReadyCallback,
         GoogleMap.OnMyLocationButtonClickListener,
         GoogleMap.OnMyLocationClickListener,
+        GoogleMap.OnMapClickListener,
+        GoogleMap.OnMapLongClickListener,
         ActivityCompat.OnRequestPermissionsResultCallback,
         LocationListener {
 
@@ -61,6 +65,10 @@ public class MapsActivity extends AppCompatActivity implements
     private long mLastUpdateLocationTime;
 
     private LocationSource.OnLocationChangedListener myLocationListener = null;
+
+    private int MARKER_NUMBER_CONTER = 0;
+
+    private Marker[] mMakerArray = new Marker[5];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,7 +134,33 @@ public class MapsActivity extends AppCompatActivity implements
 
         mMap.setOnMyLocationButtonClickListener(this);
         mMap.setOnMyLocationClickListener(this);
+        mMap.setOnMapClickListener(this);
+        mMap.setOnMapLongClickListener(this);
     }
+
+    @Override
+    public void onMapClick(LatLng point) {
+        addMarker(point);
+        Toast.makeText(this, "tapped, point=" + point, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onMapLongClick(LatLng point) {
+        Toast.makeText(this, "long pressed, point=" + point, Toast.LENGTH_SHORT).show();
+    }
+
+    public void addMarker(LatLng point) {
+        if(MARKER_NUMBER_CONTER<5) {//最大5个点
+            mMakerArray[MARKER_NUMBER_CONTER++] = mMap.addMarker(new MarkerOptions()
+                    .position(point)
+                    .draggable(true)
+                    .alpha(0.7f)
+                    .title(String.valueOf(MARKER_NUMBER_CONTER)));
+        } else {
+            Toast.makeText(this, "数组越界，不加Marker", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
     private void registerBroadcastReceiver() {
         IntentFilter intentFilter = new IntentFilter();
